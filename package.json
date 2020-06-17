@@ -5,5 +5,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "axios": "^0.19.2",
+    "express": "^4.17.1"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "nodemon": "^2.0.4"
+  }
 }
