@@ -6,7 +6,7 @@ const BAD_LOCAL_STORAGE_URL_KEY = "BAD_FEED_URL";
  */
 function addNewUrlToLocalStorage() {
     let url = document.getElementById('newUrl').value;
-    let feeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
+    let feeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY))  || [];
     if (!feeds.includes(url)) {
         feeds.push(url);
     }
@@ -103,7 +103,7 @@ function renderFeedList() {
  * @param url bad url
  */
 function addBadUrlToLocalStorage(url) {
-    let badUrls = localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY);
+    let badUrls = localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY) || [];
     if (badUrls) {
         badUrls = JSON.parse(badUrls);
         if (!badUrls.includes(url)) {
@@ -119,7 +119,7 @@ function addBadUrlToLocalStorage(url) {
  * Fetch every URL from the LocalStarage and push it into the url state
  */
 function getUrlsFromLocalStorage() {
-    let feedUrls = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
+    let feedUrls = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY)) || [];
     if (feedUrls) {
         if(feedUrls.length > 0) {
             document.getElementById("empty").style.display = "none";
