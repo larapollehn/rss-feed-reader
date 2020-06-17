@@ -7,10 +7,10 @@ const BAD_LOCAL_STORAGE_URL_KEY = "BAD_FEED_URL";
 function addNewUrlToLocalStorage() {
     let url = document.getElementById('newUrl').value;
     let feeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
-    if(!feeds.includes(url)){
+    if (!feeds.includes(url)) {
         feeds.push(url);
     }
-   localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(feeds));
+    localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(feeds));
     getFeedOfUrl(url);
     renderFeedList();
 }
@@ -62,7 +62,7 @@ function renderFeedList() {
         close.id = `close-${originalItem}`
         close.setAttribute("aria-label", "Close");
         let span = document.createElement("span");
-        span.setAttribute("aria-hidden",  "true");
+        span.setAttribute("aria-hidden", "true");
         span.innerHTML = "&times;";
         close.appendChild(span);
         closeDiv.appendChild(close);
@@ -236,6 +236,7 @@ function renderFeed(articles, url) {
 
             let pubDate = document.createElement('p');
             pubDate.classList.add('card-text');
+            pubDate.classList.add("pub-date");
             let mutedText = document.createElement('small');
             mutedText.classList.add('text-muted');
             mutedText.innerText = pubDateText;
@@ -269,9 +270,34 @@ function renderFeed(articles, url) {
             card.appendChild(cardBody);
             document.getElementById('articles').appendChild(card);
         }
+        sortArticlesByDate();
     } catch (e) {
         console.log(e);
         addBadUrlToLocalStorage(url);
+    }
+}
+
+function sortArticlesByDate() {
+    let list = document.getElementById('articles');
+    let items = list.childNodes;
+    let itemsArr = [];
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].nodeType === 1) {
+            itemsArr.push(items[i]);
+        }
+    }
+    itemsArr.sort(function (a, b) {
+        const aChildren = a.getElementsByClassName("pub-date");
+        const bCHildren = b.getElementsByClassName("pub-date");
+        if(aChildren && bCHildren && aChildren.length > 0 && bCHildren.length > 0){
+            const aPubDate = aChildren[0].innerText;
+            const bPubDate = b.children[1].innerText;
+            return aPubDate === bPubDate ? 0 : (aPubDate > bPubDate ? 1 : -1);
+        }
+
+    });
+    for (let i = 0; i < itemsArr.length; ++i) {
+        list.appendChild(itemsArr[i]);
     }
 }
 
