@@ -1,28 +1,50 @@
+const LOCAL_STORAGE_URL_KEY = "FEED_URL";
+
+function defaultUrl() {
+    localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(['https://web.de/feeds/rss/magazine/news/index.rss', 'https://www.buzzfeed.com/de/wtf.xml', 'https://techcommunity.microsoft.com/gxcuf89792/rss/Category?category.id=ITOpsTalk&interaction.style=forum']));
+}
+
+let articles = [];
+
 function getFeeds() {
-    console.log('getFeeds');
-    /**
-     if(localStorage.getItem('feedUrl') === null){
-        localStorage.setItem('feedUrl',JSON.stringify(['https://web.de/feeds/rss/magazine/news/index.rss']) );
-        alert('No feeds yet, please add one.');
-    } else {
-     **/
-    let feedUrls = JSON.parse(localStorage.getItem('feedUrl'));
-    let firstUrl = feedUrls[0];
-    axios({
-        method: 'POST',
-        url: '/api',
-        data: {
-            target: firstUrl
+    let feedUrls = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
+    if (feedUrls) {
+        for (let i = 0; i < feedUrls.length; i++) {
+            let currentUrl = feedUrls[i];
+            console.log(currentUrl, i);
+            axios({
+                method: 'POST',
+                url: '/api',
+                data: {
+                    target: currentUrl
+                }
+            }).then((response) => {
+                let jsonData = xml2js(response.data, {compact: true, spaces: 4});
+                let items = jsonData['rss']['channel']['item'];
+                articles.push(items);
+            }).catch((error) => {
+                console.log('Failure, Server Response', error.message);
+            });
         }
-    }).then((response) => {
-        let jsonData = xml2js(response.data, {compact: true, spaces: 4});
-        console.log('Success, Server Response', JSON.stringify(jsonData));
-    }).catch((error) => {
-        console.log('Failure, Server Response', error.message);
+    }
+}
+
+function printArticles() {
+    articles.forEach( feed => {
+        for (let i = 0; i < feed.length; i++){
+            let title = articles[i]['title'];
+            let description = articles[i]['description'];
+            let pubDate = articles[i]['pubDate'];
+            let link = articles[i]['link']
+            for(let j = 0; j < articles.length; j++){
+
+            }
+        }
     })
 
 }
 
+defaultUrl();
 getFeeds();
 
 
