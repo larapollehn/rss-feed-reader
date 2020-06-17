@@ -1,0 +1,20 @@
+#articles{
+    width: 60%;
+    margin: 0 auto;
+}
+
+.card{
+    margin-top: 20px;
+}
+
+@media only screen and (max-width: 769px) {
+    #articles{
+        width: 100%;
+        margin: 0;
+    }
+}
+
+.close{
+    float: left !important;
+    margin-right: 10px;
+}

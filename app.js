@@ -13,7 +13,13 @@ app.post('/api', (req, res) => {
         .then((response) => {
             res.send(JSON.stringify(response.data));
         }).catch((error) => {
-            res.status(400).send(JSON.stringify(error.response.message));
+        if (error.response) {
+            res.status(400).send(error.response.data);
+        } else if (error.request) {
+            res.status(400).send(error.request);
+        } else {
+            res.status(400).send('Error', error.message);
+        }
     })
 })
 

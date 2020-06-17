@@ -1,51 +1,94 @@
 const LOCAL_STORAGE_URL_KEY = "FEED_URL";
+const BAD_LOCAL_STORAGE_URL_KEY = "BAD_FEED_URL";
 
-/**
- * State manager for managing all kind of stuff. Generic implementation
- *
- * @param insertCallback what should happen when a new insertion happens
- * @param deleteCallback what should happen when an item is deleted from the state
- */
-function StateManager(insertCallback, deleteCallback) {
-    const obj = {};
-    obj.state = [];
-    obj.stateSet = new Set();
-    obj.insertCallback = insertCallback;
-    obj.deleteCallback = deleteCallback;
+function addUrl(event) {
+    let url = document.getElementById('newUrl').value;
+    let feeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
+    if(!feeds.includes(url)){
+        feeds.push(url);
+    }
+   localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(feeds));
+    getFeedOfUrl(url);
+    renderFeedList();
+}
 
-    obj.append = function (element) {
-        if (!obj.stateSet.has(element)) {
-            obj.state.push(element);
-            obj.stateSet.add(element);
-            if(obj.insertCallback){
-                obj.insertCallback(element);
-            }
-        }
+function removeUrl(url) {
+    let allFeeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY)) || [];
+    allFeeds = allFeeds.filter(current => current !== url);
+    console.log(allFeeds, url);
+
+    let badFeeds = JSON.parse(localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY)) || [];
+    badFeeds = badFeeds.filter(current => current !== url);
+
+    localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(allFeeds));
+    localStorage.setItem(BAD_LOCAL_STORAGE_URL_KEY, JSON.stringify(badFeeds));
+}
+
+function renderFeedList() {
+    let allFeeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY)) || [];
+    let badFeeds = JSON.parse(localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY)) || [];
+    let menu = document.getElementById('urlMenu');
+    while (menu.hasChildNodes()) {
+        menu.removeChild(menu.firstChild);
     }
 
-    obj.delete = function (item) {
-        if (obj.stateSet.has(item)) {
-            obj.stateSet.delete(item);
-            obj.state = obj.state.filter(function (i) {
-                return i !== item;
-            });
-            if(obj.deleteCallback) {
-                obj.deleteCallback(item);
-            }
+    function render(originalItem) {
+        let item = originalItem.length > 20 ? originalItem.substr(0, 50) + "... " : originalItem;
+        let div = document.createElement("div");
+        div.id = `div-${originalItem}`;
+
+        let p = document.createElement('p');
+        p.classList.add('dropdown-item');
+        p.id = originalItem;
+
+        let close = document.createElement("button");
+        let closeDiv = document.createElement("div");
+        close.type = "button";
+        close.classList.add("close");
+        close.id = `close-${originalItem}`
+        close.setAttribute("aria-label", "Close");
+        let span = document.createElement("span");
+        span.setAttribute("aria-hidden",  "true");
+        span.innerHTML = "&times;";
+        close.appendChild(span);
+        closeDiv.appendChild(close);
+        p.innerHTML = closeDiv.innerHTML + item;
+
+        div.appendChild(p);
+        menu.appendChild(div);
+        document.getElementById(`close-${originalItem}`).addEventListener("click", function (event) {
+            div.parentNode.removeChild(div);
+            removeUrl(originalItem);
+        })
+    }
+
+    for (let i = 0; i < allFeeds.length; i++) {
+        if (!badFeeds.includes(allFeeds[i])) {
+            render(allFeeds[i]);
         }
     }
-    return obj;
+    for (let i = 0; i < badFeeds.length; i++) {
+        render(badFeeds[i]);
+    }
 }
 
 /**
- * Global State manager for each URL's feed.
+ * Add url which can not be read and parsed into localStorage. Those urls should
+ * be marked as such.
+ * @param url bad url
  */
-const feedState = StateManager(renderFeed, null);
-
-/**
- * Global State manager
- */
-const urlState = StateManager(getFeedOfUrl, null);
+function addBadUrl(url) {
+    let badUrls = localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY);
+    if (badUrls) {
+        badUrls = JSON.parse(badUrls);
+        if (!badUrls.includes(url)) {
+            badUrls.push(url);
+        }
+    } else {
+        badUrls = [url];
+    }
+    localStorage.setItem(BAD_LOCAL_STORAGE_URL_KEY, JSON.stringify(badUrls));
+}
 
 /**
  * Fetch every URL from the LocalStarage and push it into the url state
@@ -55,7 +98,7 @@ function getUrls() {
     if (feedUrls) {
         for (let i = 0; i < feedUrls.length; i++) {
             let currentUrl = feedUrls[i];
-            urlState.append(currentUrl);
+            getFeedOfUrl(currentUrl);
         }
     }
 }
@@ -72,12 +115,64 @@ function getFeedOfUrl(url) {
             target: url
         }
     }).then((response) => {
-        let jsonData = xml2js(response.data, {compact: true, spaces: 4});
-        let items = jsonData['rss']['channel']['item'];
-        feedState.append(items);
+        try {
+            let jsonData = xml2js(response.data, {compact: true, spaces: 4});
+            let items = jsonData['rss']['channel']['item'];
+            renderFeed(items, url);
+        } catch (e) {
+            addBadUrl(url);
+        }
     }).catch((error) => {
-        console.log('Failure, Server Response', error.message);
+        console.log('Failure, Server Response: ', error.response);
+        addBadUrl(url);
     });
+}
+
+/**
+ * Remove html tag from the string
+ * @param html string with possible html tags
+ * @returns {string} string without html tags
+ */
+function stripHtml(html) {
+    if (html) {
+        html = html.replace(/<style([\s\S]*?)<\/style>/gi, '');
+        html = html.replace(/<script([\s\S]*?)<\/script>/gi, '');
+        html = html.replace(/<\/div>/ig, '\n');
+        html = html.replace(/<\/li>/ig, '\n');
+        html = html.replace(/<li>/ig, '  *  ');
+        html = html.replace(/<\/ul>/ig, '\n');
+        html = html.replace(/<\/p>/ig, '\n');
+        html = html.replace(/<br\s*[\/]?>/gi, "\n");
+        html = html.replace(/<[^>]+>/ig, '');
+        html = html.replace(/&[a-zA-Z]+;/ig, '.');
+        html = html.replace(/[\r\n]{2,}/g, "\n");
+        html = html.split("\n").filter(function (e) {
+            return e.length > 1;
+        }).join("\n");
+        return html;
+    }
+}
+
+const firstTLDs = "ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|be|bf|bg|bh|bi|bj|bm|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|cl|cm|cn|co|cr|cu|cv|cw|cx|cz|de|dj|dk|dm|do|dz|ec|ee|eg|es|et|eu|fi|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|im|in|io|iq|ir|is|it|je|jo|jp|kg|ki|km|kn|kp|kr|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|na|nc|ne|nf|ng|nl|no|nr|nu|nz|om|pa|pe|pf|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|yt".split('|');
+const secondTLDs = "com|edu|gov|net|mil|org|nom|sch|caa|res|off|gob|int|tur|ip6|uri|urn|asn|act|nsw|qld|tas|vic|pro|biz|adm|adv|agr|arq|art|ato|bio|bmd|cim|cng|cnt|ecn|eco|emp|eng|esp|etc|eti|far|fnd|fot|fst|g12|ggf|imb|ind|inf|jor|jus|leg|lel|mat|med|mus|not|ntr|odo|ppg|psc|psi|qsl|rec|slg|srv|teo|tmp|trd|vet|zlg|web|ltd|sld|pol|fin|k12|lib|pri|aip|fie|eun|sci|prd|cci|pvt|mod|idv|rel|sex|gen|nic|abr|bas|cal|cam|emr|fvg|laz|lig|lom|mar|mol|pmn|pug|sar|sic|taa|tos|umb|vao|vda|ven|mie|北海道|和歌山|神奈川|鹿児島|ass|rep|tra|per|ngo|soc|grp|plc|its|air|and|bus|can|ddr|jfk|mad|nrw|nyc|ski|spy|tcm|ulm|usa|war|fhs|vgs|dep|eid|fet|fla|flå|gol|hof|hol|sel|vik|cri|iwi|ing|abo|fam|gok|gon|gop|gos|aid|atm|gsm|sos|elk|waw|est|aca|bar|cpa|jur|law|sec|plo|www|bir|cbg|jar|khv|msk|nov|nsk|ptz|rnd|spb|stv|tom|tsk|udm|vrn|cmw|kms|nkz|snz|pub|fhv|red|ens|nat|rns|rnu|bbs|tel|bel|kep|nhs|dni|fed|isa|nsn|gub|e12|tec|орг|обр|упр|alt|nis|jpn|mex|ath|iki|nid|gda|inc".split('|');
+
+function removeSubdomain(s) {
+    s = s.replace(/^www\./, '');
+    let parts = s.split('.');
+    while (parts.length > 3) {
+        parts.shift();
+    }
+    if (parts.length === 3 && ((parts[1].length > 2 && parts[2].length > 2) || (secondTLDs.indexOf(parts[1]) === -1) && firstTLDs.indexOf(parts[2]) === -1)) {
+        parts.shift();
+    }
+    return parts.join('.');
+};
+
+function extractDomain(data) {
+    const a = document.createElement('a');
+    a.href = data;
+    const hostname = a.hostname;
+    return (removeSubdomain(hostname));
 }
 
 /**
@@ -85,53 +180,70 @@ function getFeedOfUrl(url) {
  * This callback function will render each article of the feed.
  *
  * @param articles a collection of a feed. Composed of many articles
+ * @param url from which URL this feeds come from
  */
-function renderFeed(articles) {
-    for (let i = 0; i < articles.length; i++) {
-        let titleText = articles[i]['title']["_text"];
-        let descriptionText = articles[i]['description']["_text"];
-        let pubDateText = articles[i]['pubDate']["_text"];
-        let linkText = articles[i]['link']["_text"];
-        console.log(linkText);
+function renderFeed(articles, url) {
+    try {
+        for (let i = 0; i < articles.length; i++) {
+            let titleText = articles[i]['title']["_text"] || articles[i]['title']["_cdata"];
+            let descriptionText = stripHtml(articles[i]['description']["_text"]) || stripHtml(articles[i]['description']["_cdata"]);
+            let pubDateText = articles[i]['pubDate']["_text"] || articles[i]['pubDate']["_cdata"];
+            let linkText = articles[i]['link']["_text"] || articles[i]['link']["_cdata"];
+            let card = document.createElement('div');
+            card.classList.add('card');
+            card.classList.add('flex-row');
+            card.classList.add('flex_wrap');
 
-        let card = document.createElement('div');
-        card.classList.add('card');
+            let cardBody = document.createElement('div');
+            cardBody.classList.add('card-body');
 
-        let cardBody = document.createElement('div');
-        cardBody.classList.add('card-body');
+            let cardTitle = document.createElement('h5');
+            cardTitle.classList.add('card-title');
+            cardTitle.style.fontWeight = "bold";
+            cardTitle.innerText = titleText;
 
-        let cardTitle = document.createElement('h5');
-        cardTitle.classList.add('card-title')
-        cardTitle.innerText = titleText;
+            let cardText = document.createElement('p');
+            cardText.classList.add('card-text');
+            cardText.style.color = "#505050";
+            cardText.innerText = descriptionText;
 
-        let cardText = document.createElement('p');
-        cardText.classList.add('card-text');
-        cardText.innerText = descriptionText;
+            let pubDate = document.createElement('p');
+            pubDate.classList.add('card-text');
+            let mutedText = document.createElement('small');
+            mutedText.classList.add('text-muted');
+            mutedText.innerText = pubDateText;
+            pubDate.appendChild(mutedText);
 
-        let pubDate = document.createElement('p');
-        pubDate.classList.add('card-text');
-        let mutedText = document.createElement('small');
-        mutedText.classList.add('text-muted');
-        mutedText.innerText = pubDateText;
-        pubDate.appendChild(mutedText);
+            let link = document.createElement('a');
+            link.href = linkText;
+            link.target = "_blank";
+            link.innerText = `Read full article at ${extractDomain(url)}`;
 
-        let link = document.createElement('a');
-        link.href = linkText;
-        link.innerText = 'Read full article';
+            cardBody.appendChild(cardTitle);
+            cardBody.appendChild(cardText);
+            cardBody.appendChild(pubDate);
+            cardBody.appendChild(link);
 
-        cardBody.appendChild(cardTitle);
-        cardBody.appendChild(cardText);
-        cardBody.appendChild(pubDate);
-        cardBody.appendChild(link);
+            try {
+                let imageText = articles[i]["media:thumbnail"] ? articles[i]["media:thumbnail"]["_attributes"]["url"] : articles[i]["enclosure"]["_attributes"]["url"];
+                let imageCard = document.createElement("img");
+                imageCard.setAttribute("src", imageText);
+                imageCard.style.width = "300px";
+                imageCard.style.height = "auto";
+                imageCard.classList.add("card-img-top");
+                card.appendChild(imageCard);
+            } catch (e) {
+            }
 
-        card.appendChild(cardBody);
+            card.appendChild(cardBody);
 
-        document.getElementById('articles').appendChild(card);
+            document.getElementById('articles').appendChild(card);
+        }
+    } catch (e) {
+        console.log(e);
+        addBadUrl(url);
     }
 }
 
-function main() {
-    getUrls();
-}
-
-main();
+getUrls();
+renderFeedList();

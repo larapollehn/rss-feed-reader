@@ -4,31 +4,30 @@
     <meta charset="UTF-8">
     <title>My RSS Feed Reader</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="#">Navbar</a>
+    <a class="navbar-brand" href="#">RSS Feed Reader</a>
+    <a href="#https://github.com/larapollehn"><img src="images/github-image.png"></a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
-
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ml-auto">
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    My Feeds
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: aliceblue">
+                    Feed Sources
                 </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="#">First</a>
-                    <a class="dropdown-item" href="#">Second</a>
+                <div id="urlMenu" class="dropdown-menu" aria-labelledby="navbarDropdown">
                 </div>
             </li>
         </ul>
-        <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" type="search" placeholder="RSS Feed URL..." aria-label="Search" value="https://www.buzzfeed.com/de/wtf.xml">
-            <button class="btn btn-outline-light my-2 my-sm-0">Add Feed</button>
-        </form>
+        <div class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" id="newUrl" type="search" placeholder="RSS Feed URL..." aria-label="Search" value="https://www.buzzfeed.com/de/wtf.xml">
+            <button class="btn btn-outline-light my-2 my-sm-0" onclick="addUrl()">Add Feed</button>
+        </div>
     </div>
 </nav>
 
