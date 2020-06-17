@@ -31,6 +31,9 @@
     #empty{
         margin-top: 200px;
     }
+    #articles{
+        width: 100%;
+    }
 }
 
 @media only screen and (max-width: 1280px) {

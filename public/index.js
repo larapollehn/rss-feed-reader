@@ -276,7 +276,7 @@ function renderFeed(articles, url) {
                 let imageCard = document.createElement("img");
                 imageCard.setAttribute("src", imageText);
                 imageCard.style.width = "300px";
-                imageCard.style.height = "auto";
+                imageCard.style.height = "300px";
                 imageCard.classList.add("card-img-top");
                 card.appendChild(imageCard);
             } catch (e) {
