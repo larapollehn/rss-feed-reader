@@ -15,7 +15,8 @@ function getFeeds() {
             target: firstUrl
         }
     }).then((response) => {
-        console.log('Success, Server Response', response.data);
+        let jsonData = xml2js(response.data, {compact: true, spaces: 4});
+        console.log('Success, Server Response', JSON.stringify(jsonData));
     }).catch((error) => {
         console.log('Failure, Server Response', error.message);
     })
