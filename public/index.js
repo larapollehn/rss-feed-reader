@@ -11,6 +11,11 @@ function addNewUrlToLocalStorage() {
         feeds.push(url);
     }
     localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(feeds));
+    if(feeds.length !== 0){
+        document.getElementById("empty").style.display = "none";
+    }else{
+        document.getElementById("empty").style.display = "block";
+    }
     getFeedOfUrl(url);
     renderFeedList();
 }
@@ -33,6 +38,11 @@ function removeAnUrlFromLocalStorage(url) {
     articlesOfRemovedFeed.forEach(article => {
         document.getElementById('articles').removeChild(article);
     });
+    if(allFeeds.length !== 0){
+        document.getElementById("empty").style.display = "none";
+    }else{
+        document.getElementById("empty").style.display = "block";
+    }
 }
 
 /**
@@ -70,7 +80,7 @@ function renderFeedList() {
 
         div.appendChild(p);
         menu.appendChild(div);
-        document.getElementById(`close-${originalItem}`).addEventListener("click", function (event) {
+        document.getElementById(`close-${originalItem}`).addEventListener("click", function () {
             div.parentNode.removeChild(div);
             removeAnUrlFromLocalStorage(originalItem);
         })
@@ -111,9 +121,14 @@ function addBadUrlToLocalStorage(url) {
 function getUrlsFromLocalStorage() {
     let feedUrls = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
     if (feedUrls) {
-        for (let i = 0; i < feedUrls.length; i++) {
-            let currentUrl = feedUrls[i];
-            getFeedOfUrl(currentUrl);
+        if(feedUrls.length > 0) {
+            document.getElementById("empty").style.display = "none";
+            for (let i = 0; i < feedUrls.length; i++) {
+                let currentUrl = feedUrls[i];
+                getFeedOfUrl(currentUrl);
+            }
+        }else{
+            document.getElementById("empty").style.display = "block";
         }
     }
 }
@@ -277,6 +292,14 @@ function renderFeed(articles, url) {
     }
 }
 
+/**
+ * Sorting articles by date.
+ *
+ * This function should be called after a new feed is inserted into the DOM.
+ *
+ * Still very slow, if 100 feeds are inserted sequentially, the DOM will have to
+ * be sorted 100 times.
+ */
 function sortArticlesByDate() {
     let list = document.getElementById('articles');
     let items = list.childNodes;
@@ -289,7 +312,7 @@ function sortArticlesByDate() {
     itemsArr.sort(function (a, b) {
         const aChildren = a.getElementsByClassName("pub-date");
         const bCHildren = b.getElementsByClassName("pub-date");
-        if(aChildren && bCHildren && aChildren.length > 0 && bCHildren.length > 0){
+        if (aChildren && bCHildren && aChildren.length > 0 && bCHildren.length > 0) {
             const aPubDate = aChildren[0].innerText;
             const bPubDate = b.children[1].innerText;
             return aPubDate === bPubDate ? 0 : (aPubDate > bPubDate ? 1 : -1);

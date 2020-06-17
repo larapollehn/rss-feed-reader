@@ -1,24 +1,46 @@
-#articles{
+#articles {
     width: 60%;
     margin: 0 auto;
 }
 
-.card{
+.card {
     margin-top: 20px;
 }
 
-.card:last-child{
+.card:last-child {
     margin-bottom: 50px;
 }
 
 @media only screen and (max-width: 769px) {
-    #articles{
+    #articles {
         width: 100%;
         margin: 0;
     }
 }
 
-.close{
+.close {
     float: left !important;
     margin-right: 10px;
+}
+
+#empty{
+    text-align: center;
+}
+
+@media only screen and (max-width: 769px) {
+    #empty{
+        margin-top: 200px;
+    }
+}
+
+@media only screen and (max-width: 1280px) {
+    #empty{
+        margin-top: 200px;
+    }
+}
+
+@media only screen and (max-width: 1980px) {
+    #empty{
+        margin-top: 200px;
+    }
 }
