@@ -1,7 +1,7 @@
 const LOCAL_STORAGE_URL_KEY = "FEED_URL";
 const BAD_LOCAL_STORAGE_URL_KEY = "BAD_FEED_URL";
 
-function addUrl(event) {
+function addUrl() {
     let url = document.getElementById('newUrl').value;
     let feeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY));
     if(!feeds.includes(url)){
@@ -15,13 +15,17 @@ function addUrl(event) {
 function removeUrl(url) {
     let allFeeds = JSON.parse(localStorage.getItem(LOCAL_STORAGE_URL_KEY)) || [];
     allFeeds = allFeeds.filter(current => current !== url);
-    console.log(allFeeds, url);
 
     let badFeeds = JSON.parse(localStorage.getItem(BAD_LOCAL_STORAGE_URL_KEY)) || [];
     badFeeds = badFeeds.filter(current => current !== url);
 
     localStorage.setItem(LOCAL_STORAGE_URL_KEY, JSON.stringify(allFeeds));
     localStorage.setItem(BAD_LOCAL_STORAGE_URL_KEY, JSON.stringify(badFeeds));
+
+    const articlesOfRemovedFeed = Array.from(document.getElementsByClassName(url));
+    articlesOfRemovedFeed.forEach(article => {
+        document.getElementById('articles').removeChild(article);
+    });
 }
 
 function renderFeedList() {
@@ -223,6 +227,7 @@ function renderFeed(articles, url) {
             cardBody.appendChild(cardText);
             cardBody.appendChild(pubDate);
             cardBody.appendChild(link);
+            card.classList.add(url);
 
             try {
                 let imageText = articles[i]["media:thumbnail"] ? articles[i]["media:thumbnail"]["_attributes"]["url"] : articles[i]["enclosure"]["_attributes"]["url"];
