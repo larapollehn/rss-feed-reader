@@ -2,5 +2,6 @@ version: "3"
 services:
   reader:
     build: .
+    restart: always
     ports:
     - 3003:3000
